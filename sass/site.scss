@@ -1,0 +1,10 @@
+/* This kills the white veil entirely */
+.bg::after {
+    background-color: transparent !important;
+    background-image: none !important;
+    opacity: 0 !important;
+}
+
+/* Optional: If the text is hard to read against the GIF, 
+   uncomment the line below to add a dark tint instead */
+// .bg::after { background-color: rgba(0, 0, 0, 0.4) !important; opacity: 1 !important; }

@@ -1,0 +1,275 @@
+{%- macro main_images_style(home_url, posts_url) -%}
+#posts .block-left{background:linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)),url("{{ posts_url | safe }}") no-repeat;background-size:cover,cover}.block-left{background:linear-gradient(rgba(44,45,51,0.9),rgba(44,45,51,0.9)),url("{{ home_url | safe }}") no-repeat;background-size:cover}
+{%- endmacro main_images_style -%}
+
+{%- macro image_style(url) -%}
+#posts.inner-post-page .block-left{background:linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)),url("{{ url | safe }}") no-repeat center center;background-size:cover}
+{%- endmacro image_style -%}
+
+{%- macro mastodon_comments(server, id) -%}
+const commentsSection = document.getElementById("mastodon-comments");
+let commentsLoaded = false;
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting && !commentsLoaded) {
+            commentsLoaded = true;
+            loadComments();
+            observer.disconnect();
+        }
+    });
+}, {
+    rootMargin: '100px'
+});
+
+observer.observe(commentsSection);
+
+function loadComments() {
+    const commentsWrapper = document.getElementById("mastodon-comments");
+    const loadingMsg = document.createElement("p");
+    const loadingSmall = document.createElement("small");
+    loadingSmall.textContent = "Loading comments...";
+    loadingMsg.appendChild(loadingSmall);
+    commentsWrapper.appendChild(loadingMsg);
+    console.log('Loading comments');
+
+    const postUrl = "https://{{ server | safe }}/api/v1/statuses/{{ id | safe }}";
+
+    fetch(postUrl)
+        .then(res => res.json())
+        .then(op => {
+            fetch(postUrl + "/context")
+                .then(res => res.json())
+                .then(data => {
+                    const descendants = data.descendants || [];
+
+                    while (commentsWrapper.firstChild) {
+                        commentsWrapper.removeChild(commentsWrapper.firstChild);
+                    }
+
+                    if (descendants.length === 0) {
+                        const noComments = document.createElement("p");
+                        noComments.innerHTML = "<small>No comments yet.</small>";
+                        commentsWrapper.appendChild(noComments);
+                        return;
+                    }
+
+                    const statsBar = document.createElement("div");
+                    statsBar.innerHTML = `
+                        <div class="frame-dim">
+                        <p title="Post stats (replies/boosts/favourites)">${op.replies_count}•${op.reblogs_count}•${op.favourites_count}</p>
+                        </div>
+                    `;
+
+                    commentsWrapper.prepend(statsBar);
+                    const commentMap = {};
+                    descendants.forEach(status => {
+                        commentMap[status.id] = { ...status, children: [] };
+                    });
+
+                    const roots = [];
+                    descendants.forEach(status => {
+                        const parentId = status.in_reply_to_id;
+                        if (parentId && commentMap[parentId]) {
+                            commentMap[parentId].children.push(commentMap[status.id]);
+                        } else {
+                            roots.push(commentMap[status.id]);
+                        }
+                    });
+
+                    function renderComment(status, depth = 0) {
+                        const comment = document.createElement("article");
+                        comment.id = `comment-${status.id}`;
+                        comment.className = "m-comment";
+                        comment.setAttribute("itemprop", "comment");
+                        comment.setAttribute("itemtype", "http://schema.org/Comment");
+
+                        const account = document.createElement("a");
+                        var domain = new URL(status.account.url);
+                        const host = domain.host;
+                        const accountFull = `@${status.account.username}@${host}`;
+                        account.className = "account";
+                        account.href = status.account.url;
+                        account.itemprop = "author";
+                        account.itemtype = "http://schema.org/Person";
+                        account.rel = "external nofollow";
+                        account.title = `View profile ${status.account.username}`
+                        account.textContent = `${accountFull}`;
+
+                        let avatarSource = document.createElement("source");
+                        avatarSource.setAttribute("srcset", escapeHtml(status.account.avatar));
+                        avatarSource.setAttribute("media", "(prefers-reduced-motion: no-preference)");
+
+                        let avatarImg = document.createElement("img");
+                        avatarImg.className = "avatar";
+                        avatarImg.setAttribute("src", escapeHtml(status.account.avatar_static));
+                        avatarImg.setAttribute("alt", `Avatar for ${accountFull}`);
+
+                        let avatarPicture = document.createElement("picture");
+                        avatarPicture.appendChild(avatarSource);
+                        avatarPicture.appendChild(avatarImg);
+
+                        const verifiedFields = (status.account.fields || []).filter(field => field.verified_at !== null);
+                        const header = document.createElement("h5");
+                        header.className = "author";
+                        header.appendChild(account);
+
+                        if (verifiedFields.length > 0) {
+                            const verifiedBadge = document.createElement("span");
+                            verifiedBadge.title = "Verified account";
+                            verifiedBadge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" width="23" height="23" shape-rendering="crispEdges">
+                                <rect x="5" y="11" width="2" height="2"/>
+                                <rect x="7" y="13" width="2" height="2"/>
+                                <rect x="9" y="15" width="2" height="2"/>
+                                <rect x="11" y="13" width="2" height="2"/>
+                                <rect x="13" y="11" width="2" height="2"/>
+                                <rect x="15" y="9" width="2" height="2"/>
+                                <rect x="17" y="7" width="2" height="2"/>
+                                <rect x="19" y="5"  width="2" height="2"/>
+                                </svg>
+                            `;
+                            header.appendChild(verifiedBadge);
+                        }
+
+                        if (status.account.bot) {
+                            const botBadge = document.createElement("span");
+                            botBadge.className = "bot-badge";
+                            botBadge.title = "Automated account";
+                            botBadge.textContent = "BOT";
+                            header.appendChild(botBadge);
+                        }
+
+                        const permalink = document.createElement("a");
+                        permalink.href = status.url;
+                        permalink.itemprop = "url";
+                        permalink.title = `View comment on ${host}`;
+                        permalink.rel = "external nofollow";
+                        permalink.textContent = new Date(status.created_at).toLocaleString('en-US', {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "numeric",
+                            timeZoneName: "short",
+                            hour12: false
+                        });
+
+                        const timestamp = document.createElement("time");
+                        timestamp.datetime = status.created_at;
+                        timestamp.appendChild(permalink);
+
+                        const meta = document.createElement("div");
+                        meta.className = "meta";
+
+                        const textContainer = document.createElement("div");
+                        textContainer.className = "content-wrapper";
+                        textContainer.appendChild(header);
+                        textContainer.appendChild(timestamp);
+                        meta.appendChild(avatarPicture);
+                        meta.appendChild(textContainer);
+
+                        const main = document.createElement("main");
+                        main.itemprop = "text";
+                        status.content = emojify(status.content, status.emojis);
+
+                        const sanitizedContent = DOMPurify.sanitize(status.content, {
+                            ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'a', 'span', 'code', 'pre', 'blockquote', 'ul', 'ol', 'li', 'picture', 'source', 'img'],
+                            ALLOWED_ATTR: ['href', 'rel', 'class', 'target', 'src', 'srcset', 'alt', 'title', 'width', 'height', 'media'],
+                            ALLOW_DATA_ATTR: false,
+                            ADD_ATTR: ['target', 'rel'],
+                            RETURN_TRUSTED_TYPE: true,
+                            FORCE_BODY: true
+                        });
+
+                        const tempDiv = document.createElement("div");
+                        tempDiv.innerHTML = sanitizedContent;
+
+                        tempDiv.querySelectorAll('a').forEach(link => {
+                            link.rel = 'nofollow noopener noreferrer';
+                            link.target = '_blank';
+                        });
+
+                        Array.from(tempDiv.childNodes).forEach(node => {
+                            if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== "") {
+                                const p = document.createElement("p");
+                                p.textContent = node.textContent;
+                                main.appendChild(p);
+                            } else {
+                                main.appendChild(node.cloneNode(true));
+                            }
+                        });
+
+                        comment.appendChild(meta);
+                        comment.appendChild(main);
+
+                        if (status.children && status.children.length > 0) {
+                            status.children.forEach(child => {
+                                comment.appendChild(renderComment(child, depth + 1));
+                            });
+                        }
+
+                        return comment;
+                    }
+
+                    roots.forEach(root => {
+                        commentsWrapper.appendChild(renderComment(root));
+                    });
+                });
+        })
+        .catch(error => {
+            while (commentsWrapper.firstChild) {
+                commentsWrapper.removeChild(commentsWrapper.firstChild);
+            }
+
+            const errorMsg = document.createElement("p");
+            const errorSmall = document.createElement("small");
+            errorSmall.textContent = "Failed to load comments.";
+            errorMsg.appendChild(errorSmall);
+            commentsWrapper.appendChild(errorMsg);
+            console.error('Failed to load comments:', error);
+        });
+}
+
+function emojify(input, emojis) {
+    let output = input;
+
+    emojis.forEach(emoji => {
+        let picture = document.createElement("picture");
+        let source = document.createElement("source");
+        source.setAttribute("srcset", escapeHtml(emoji.url));
+        source.setAttribute("media", "(prefers-reduced-motion: no-preference)");
+
+        let img = document.createElement("img");
+        img.className = "emoji";
+        img.setAttribute("src", escapeHtml(emoji.static_url));
+        img.setAttribute("alt", `:${ emoji.shortcode }:`);
+        img.setAttribute("title", `:${ emoji.shortcode }:`);
+        img.setAttribute("width", "20");
+        img.setAttribute("height", "20");
+
+        picture.appendChild(source);
+        picture.appendChild(img);
+
+        output = output.replace(`:${ emoji.shortcode }:`, picture.outerHTML);
+    });
+
+    return output;
+}
+
+function escapeHtml(unsafe) {
+    return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&apos;").replace(/"/g, "&quot;")
+}
+{%- endmacro mastodon_comments -%}
+
+{%- macro music(artist, track) -%}
+{%- set api_key = get_env(name="LASTFM_KEY", default="nokey") %}
+{%- if api_key != "nokey" %}
+  {% set data_url = "https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=" ~ api_key ~ "&artist=" ~ artist ~ "&track=" ~ track ~ "&format=json&autocorrect=1" %}
+  {% set track_info = load_data(url=data_url, format="json", headers=['User-Agent=config.title ~ " site"'], required=true) %}
+  {% set artist = "<a href=" ~ track_info.track.artist.url ~ ">" ~ track_info["track"]["artist"]["name"] ~ "</a>" %}
+  {% set track = "<a href=" ~ track_info.track.url ~ ">" ~ track_info["track"]["name"] ~ "</a>" %}
+{% endif %}
+<div class="post-music">
+  <p>{{ artist | safe }} — {{ track | safe }}</p>
+</div>
+{%- endmacro track -%}
