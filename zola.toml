@@ -51,7 +51,7 @@ subtitle = false
 
 [extra.home]
 title = "Adityavarman Manjunath"
-subtitle = "Rust Engineer // Deception Tech. // Game Hacking"
+subtitle = "Go Engineer // Deception Tech. // Game Hacking"
 glitch = true
 logo = { enabled = false, height = "100", width = "100" }
 footer = true
