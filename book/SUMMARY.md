@@ -1,8 +1,6 @@
-# Profile TODO: long book names wont wrap
+# Profile
 
-- [Hi 👋](index.md)
-- [Gleam ⭐](gleam.md)
-- [Hall of Fame](hof.md)
-- [BlogSpace]()
-  - [Theming](guide/theming.md)
-  - [Deploying](guide/deploying.md)
+- [👋 Hi](index.md)
+- [⭐ Gleam](gleam.md)
+- [🏛️ Hall of Fame ](hof.md)
+- [🛡️ Security & IT](security/root.md)

@@ -2,11 +2,24 @@
 
 Hi there!
 
-![me](assets/me.png) TODO: fix this rendering
+Connect with me on:
 
+- [LinkedIn](https://www.linkedin.com/in/adityavarman-manjunath/)
+- [Discord](https://discord.com/users/770871299136028703)
 
-I like `simplicity`
+---
+
+I like `systemic modular comprehension`, `structure` & `simplicity`.
+
+---
 
 I am a **distributed systems engineer** currently working in the bleeding edge of **proactive cybersecurity** -- [Deception Technology](https://en.wikipedia.org/wiki/Deception_technology).
 
-I mainly work with Python & Rust and a modern blend of technologies like Docker, Kubernetes, RabbitMQ, MongoDB, PostgreSQL & ClickhouseDB in my current role.
+I mainly work with Python & Rust and a modern blend of technologies in my current role: 
+
+  - Docker
+  - Kubernetes
+  - RabbitMQ
+  - MongoDB
+  - PostgreSQL
+  - ClickhouseDB

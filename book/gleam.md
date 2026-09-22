@@ -1,4 +1,4 @@
-## Gleam ftw! ⭐
+# Gleam ftw! ⭐
 
 I am a big fan of [Gleam](https://gleam.run/) & the [BEAM](https://www.erlang.org/blog/a-brief-beam-primer/) world!. 
 
