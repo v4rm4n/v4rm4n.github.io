@@ -15,7 +15,7 @@ I like `systemic modular comprehension`, `structure` & `simplicity`.
 
 I am a **distributed systems engineer** currently working in the bleeding edge of **proactive cybersecurity** -- [Deception Technology](https://en.wikipedia.org/wiki/Deception_technology).
 
-I mainly work with Python & Rust and a modern blend of technologies in my current role: 
+I mainly work with Python, Rust & Gleam and a modern blend of technologies in my current role: 
 
   - Docker
   - Kubernetes

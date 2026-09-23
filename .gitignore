@@ -1,0 +1,5 @@
+# Ignore the general build folder...
+build/
+
+# ...but force Git to track the compiled book
+!build/gleebook/
